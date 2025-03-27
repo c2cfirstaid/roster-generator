@@ -5,6 +5,8 @@ from io import BytesIO
 import pandas as pd
 import zipfile
 import streamlit as st
+from openpyxl import Workbook
+from openpyxl.utils.dataframe import dataframe_to_rows
 
 st.title("Daily Class Roster Generator")
 st.write("Upload your Bookeo export file for tomorrow's classes. We'll generate one roster per class, ready to upload to Connecteam.")
@@ -33,13 +35,16 @@ if uploaded_file:
     )
 
     df['Start Time'] = pd.to_datetime(df[start_time_col])
-
     grouped = df.groupby(['Location', 'Course Category', 'Start Time'])
+
+    # Load static info block (rows 16–36 from sample)
+    info_block = pd.read_excel("Mar 27_Markham_Blended_Recert_Patrick.xlsx", sheet_name="Roster", header=None).iloc[15:36].reset_index(drop=True)
 
     zip_buffer = BytesIO()
     with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zipf:
         for (location, category, start_time), group in grouped:
-            roster_data = pd.DataFrame({
+            # Prepare student data
+            student_data = pd.DataFrame({
                 "Pass (P) or Fail (F) or No-show (N)": "",
                 "First Name": group["First name (participant)"],
                 "Last Name": group["Last name (participant)"],
@@ -50,15 +55,35 @@ if uploaded_file:
                 "Notes for Instructor": ""
             })
 
+            wb = Workbook()
+            ws = wb.active
+            ws.title = "Roster"
+
+            # Add student data starting at row 1
+            for r_idx, row in enumerate(dataframe_to_rows(student_data, index=False, header=True), start=1):
+                for c_idx, value in enumerate(row, start=1):
+                    ws.cell(row=r_idx, column=c_idx, value=value)
+
+            # Add empty rows if needed to reach row 21
+            current_row = len(student_data) + 1
+            if current_row < 21:
+                current_row = 21
+
+            # Add info block starting at row 21
+            for i, row in info_block.iterrows():
+                for j, cell in enumerate(row):
+                    ws.cell(row=current_row + i, column=j + 1, value=cell)
+
+            # Name and write the file
             date_str = start_time.strftime("%b %d")
             time_str = start_time.strftime("%I%p").lstrip('0')
             clean_course = re.sub(r'\W+', '', category.replace(" ", ""))
             clean_location = re.sub(r'\W+', '', location)
             file_name = f"{date_str}_{clean_location}_{clean_course}_{time_str}.xlsx"
 
-            excel_buffer = BytesIO()
-            roster_data.to_excel(excel_buffer, index=False)
-            zipf.writestr(file_name, excel_buffer.getvalue())
+            temp_buffer = BytesIO()
+            wb.save(temp_buffer)
+            zipf.writestr(file_name, temp_buffer.getvalue())
 
     st.success("Rosters generated!")
     st.download_button(
