@@ -23,8 +23,8 @@ if uploaded_file:
     start_time_col = "Start"
     course_type_col = df.columns[12]
     course_level_col = df.columns[61]
-    textbook_col = df.columns[114]
-    kit_col = df.columns[116]
+    textbook_col = "Textbook"
+    kit_col = "First Aid Kits"
 
     def extract_location_and_category(text):
         match = re.match(r"(.+?)\s*\((.+)\)", str(text))
