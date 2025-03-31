@@ -67,7 +67,7 @@ if uploaded_file:
                 "Last Name": group["Last name (participant)"],
                 "Course Taken": group[course_level_col],
                 "QR Code / Paper Test\n(specify which)": "",
-                "First Aid Kit\n(HIGHLIGHT)\ndelivered = green\nnot delivered = red": group[kit_col].apply(lambda x: "Purchased" if pd.notna(x) and str(x).strip() != "" else ""),
+                "First Aid Kit\n(HIGHLIGHT)\ndelivered = green\nnot delivered = red": group[kit_col].fillna("").apply(str),
                 "Textbook\n(HIGHLIGHT)\ndelivered = green\nnot delivered = red": group[textbook_col].apply(lambda x: "Purchased" if pd.notna(x) and str(x).strip() != "" else ""),
                 "Notes for Instructor": ""
             })
