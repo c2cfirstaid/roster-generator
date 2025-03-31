@@ -22,7 +22,7 @@ if uploaded_file:
     # Identify required columns
     start_time_col = "Start"
     course_type_col = df.columns[12]
-    course_level_col = df.columns[61]
+    course_level_col = "Courses & Levels"
     textbook_col = "Textbook"
     kit_col = "First Aid Kits"
 
